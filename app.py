@@ -8,7 +8,7 @@ st.title("🔍 Smart Product Comparison Tool")
 st.write("Compare two products side by side before you buy. All links are affiliate supported.")
 
 # --- OpenAI API setup ---
-openai.api_key = st.secrets["OPENAI_API_KEY"]
+openai.api_key = st.secrets["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"]
 
 # --- Inputs ---
 prod1 = st.text_input("Enter Product 1 Name or Link:")
