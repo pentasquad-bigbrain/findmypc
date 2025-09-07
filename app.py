@@ -1,38 +1,69 @@
-
 import streamlit as st
 import openai
+import pandas as pd
 
-st.set_page_config(page_title="Smart Product Comparison Tool", layout="centered")
+st.set_page_config(page_title="AI PC Builder", layout="centered")
+st.title("💻 AI PC Builder")
+st.caption("Get personalized PC component recommendations with affiliate links!")
 
-st.title("🔍 Smart Product Comparison Tool")
-st.write("Compare two products side by side before you buy. All links are affiliate supported.")
-
-# --- OpenAI API setup ---
+# --- OpenAI API ---
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 
-# --- Inputs ---
-prod1 = st.text_input("Enter Product 1 Name or Link:")
-prod2 = st.text_input("Enter Product 2 Name or Link:")
+# --- Step 1: Ask user for use case ---
+use_case = st.selectbox(
+    "What will you mainly use your PC for?",
+    ["Gaming", "Office / Productivity", "Content Creation / Video Editing", "Programming / Development"]
+)
 
-if st.button("Compare"):
-    if prod1 and prod2:
-        with st.spinner("Analyzing products..."):
-            prompt = f"""Compare these two products in detail: {prod1} vs {prod2}.
-            Provide a table with key features, pros, cons, and best use cases.
-            """
+# --- Step 2: Gaming specifics if chosen ---
+gaming_type = None
+if use_case == "Gaming":
+    gaming_type = st.multiselect(
+        "Select the types of games you play",
+        ["Esports / Competitive", "AAA Games", "Indie / Casual"]
+    )
+
+# --- Step 3: Budget ---
+budget = st.number_input("Enter your budget (in USD)", min_value=200, step=50)
+
+# --- Step 4: Generate PC recommendation ---
+if st.button("Generate Build"):
+    with st.spinner("Generating your PC build..."):
+        # Prepare AI prompt
+        prompt = f"""
+        Suggest a complete PC build for the following:
+        Use case: {use_case}
+        """
+        if gaming_type:
+            prompt += f" Gaming types: {', '.join(gaming_type)}"
+        prompt += f" Budget: ${budget}.\nProvide a table of recommended components (CPU, GPU, RAM, Motherboard, Storage, PSU, Case), prices, compatibility check, and short affiliate link placeholders."
+
+        try:
             response = openai.ChatCompletion.create(
                 model="gpt-4o-mini",
-                messages=[{"role": "system", "content": "You are a product comparison assistant."},
-                          {"role": "user", "content": prompt}],
-                max_tokens=600
+                messages=[
+                    {"role": "system", "content": "You are a helpful PC building assistant."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=800
             )
-            comparison = response["choices"][0]["message"]["content"]
-            st.markdown("### 📊 Comparison Result")
-            st.markdown(comparison)
+            result = response["choices"][0]["message"]["content"]
 
-            # Affiliate links placeholder (replace with real links)
-            st.markdown("### 🛒 Buy Links")
-            st.markdown(f"- [Buy {prod1} (Affiliate Link)](https://amzn.to/example1)")
-            st.markdown(f"- [Buy {prod2} (Affiliate Link)](https://amzn.to/example2)")
-    else:
-        st.error("Please enter both product names or links to compare.")
+            st.markdown("### 🖥 Recommended PC Build")
+            st.markdown(result)
+
+            # Example affiliate links (replace with your links)
+            st.markdown("### 🛒 Affiliate Links")
+            st.markdown("- CPU: [Buy Here](https://amzn.to/example1)")
+            st.markdown("- GPU: [Buy Here](https://amzn.to/example2)")
+            st.markdown("- RAM: [Buy Here](https://amzn.to/example3)")
+            st.markdown("- Motherboard: [Buy Here](https://amzn.to/example4)")
+            st.markdown("- Storage: [Buy Here](https://amzn.to/example5)")
+            st.markdown("- PSU: [Buy Here](https://amzn.to/example6)")
+            st.markdown("- Case: [Buy Here](https://amzn.to/example7)")
+
+        except Exception as e:
+            st.error(f"⚠️ Error generating build: {e}")
+
+# --- Step 5: Budget warning ---
+st.info("💡 Tip: You can adjust your budget to get better component suggestions.")
